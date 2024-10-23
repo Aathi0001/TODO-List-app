@@ -1,0 +1,244 @@
+/* General Body Styles */
+body {
+    background-color: #1e1e2f; /* Dark background color */
+    color: #f1f1f1; /* Light text color */
+    overflow-y: auto; /* Prevent scrolling on the body */
+    height: 100vh; /* Full height of the viewport */
+    margin: 0; /* Remove default margin */
+}
+.navbar-brand{
+    color: aliceblue;
+}
+
+.navbar-toggler {
+    color: white;
+}
+
+.navbar {
+    background-color: #000016; /* Darker navbar */
+    margin-bottom: 20px; /* Space below navbar */
+    position: fixed; /* Fix navbar at the top */
+    width: 100%; /* Full width */
+    z-index: 1000; /* Ensure it is above other elements */
+    top: 0; /* Ensure it's positioned at the very top */
+}
+
+/* Sidebar Styles */
+.sidebar {
+    position: fixed; /* Fix sidebar position */
+    top: 76px; /* Below the navbar (56px is the height of Bootstrap navbar) */
+    left: 0; /* Align to the left */
+    bottom: 20px; /* Align to the bottom */
+    justify-content: center;
+    background-color: #2b2b3b; /* Darker sidebar background */
+    border-radius: 10px; /* Rounded corners for sidebar */
+    padding: 10px; /* Padding for sidebar */
+    width: 25%; /* Set a width for the sidebar */
+}
+
+
+.sidebar .nav{
+    justify-content: center;
+    left: 120px
+}
+.sidebar .nav li{
+    margin-bottom: 24px;
+    display: block;
+}
+.sidebar .nav li a{
+    font-size: 24px;
+    font-weight: 600;
+    display: block;
+    padding: 5px 50px;
+}
+
+.sidebar .nav-link {
+    font-size: 1.2rem;          /* Adjust font size if needed */
+    color: #d3c3c3;                /* Optional: Adjust text color */
+    padding: 10px;
+    text-decoration: none;      /* Optional: Remove underline from links */
+}
+/* Add this to your styles.css or within the <style> tag */
+.nav-link.active {
+    color: #007bff;    /* Change text color when active */
+    font-weight: bold; /* Optional: make it bold */
+    text-decoration: underline; /* Optional: underline to indicate active */
+    background-color: #2b2b3b; /* Optional: slight background color change */
+}
+
+.sidebar .nav-link:hover {
+    color: #007bff;             /* Optional: Change text color on hover */
+}
+/* Main Content Styles */
+.main-content {
+    margin-left: 25%;/* Leave space for fixed sidebar */
+    padding: 20px; /* Padding for main content */
+    overflow-y: auto; /* Allow vertical scrolling */
+    position: relative; /* Ensure positioning is relative for scrolling */
+}
+
+/* Menu Header Styles */
+.menu-header {
+    color: #ffcc00; /* Gold color for menu header */
+    margin-top: 10px;
+    font-size: 24px; /* Larger font size */
+    margin-bottom: 40%;
+    text-align: center; /* Center align */
+}
+
+/* Menu Item 'M' Styles */
+.menu-header span {
+    color: #ffcc00; /* Different color for 'M' */
+    font-size: 48px; /* Larger font size */
+    text-align: center; /* Center align */
+}
+
+/* Input Group Styles */
+.input-group {
+    margin-top: 25px; /* Adds margin between navbar and input */
+}
+
+/* Input and Button Styles */
+#task-input, #task-desc, #task-time {
+    width: 100%;
+    border-radius: 10px;
+    background-color: #2b2b3b; /* Dark input background */
+    color: #f1f1f1; /* Light text for input */
+    border: 1px solid #444; /* Border for input */
+}
+
+#task-input::placeholder, 
+#task-desc::placeholder, 
+#task-time::placeholder {
+    color: #ffffff; /* You can change this to any color you prefer */
+    opacity: 1; /* This ensures that the color isn't affected by opacity */
+}
+
+.task-desc {
+    font-style: italic;
+    font-size: 0.9em;
+    color: #66ac16;
+    margin-left: 10px;
+}
+
+.task-time {
+    font-size: 1em;
+    color: #ffcc00;
+    margin-left: 10px;
+}
+
+
+#add-task-btn {
+    margin-top: 10px;
+    border-radius: 10px;
+    background-color: #000025; /* Darker button background */
+    color: #f1f1f1;
+}
+
+/* Task Container Styles */
+.task-container {
+    display: flex;
+    align-items: center; /* Align items vertically */
+    justify-content: space-between; /* Space between text and buttons */
+    flex-wrap: wrap; /* Allow wrapping for long text */
+}
+
+.task-container div {
+    display: flex;
+    align-items: center; /* Vertically align buttons */
+    justify-content: flex-end;
+}
+
+
+/* List Group Item Styles */
+.list-group-item {
+    background-color: #2b2b3b; /* Darker task background */
+    min-height: 60px; /* Adjust as needed for better visibility */
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #444; /* Border for list items */
+    color: #f1f1f1; /* Text color for tasks */
+    padding: 10px; /* Padding for task items */
+    overflow: hidden; /* Hide overflow to avoid scroll */
+}
+
+/* Task Text Styles */
+.task-text, .task-desc, .task-time{
+    flex: 1; /* Allow the text to take available space */
+    word-wrap: break-word; /* Break long words to the next line */
+    margin-right: 10px; /* Space between text and buttons */
+    overflow: hidden; /* Hide overflow text */
+    white-space: normal; /* Allow text to wrap normally */
+}
+
+/* Checkbox Styles */
+.complete-checkbox {
+    transform: scale(1.5); /* Make the checkbox bigger */
+    margin-right: 10px; /* Space between checkbox and text */
+}
+
+/* Button Styles */
+.edit-btn, .delete-btn {
+    margin-left: 5px; /* Space between buttons */
+    white-space: nowrap; /* Prevent text from wrapping inside buttons */
+}
+
+/* Completed Task Styles */
+.completed .task-text {
+    text-decoration: line-through; /* Strikethrough for completed tasks */
+    color: #bbb; /* Lighter color for completed tasks */
+}
+
+/* Nav Link Styles */
+.nav-link {
+    color: #f1f1f1; /* Light text color for links */
+}
+
+.nav-link:hover {
+    color: #ccc; /* Light hover effect for links */
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        display: none; /* Hide sidebar on small screens */
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        margin-right: 0;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}
+
+/* Small Screen Layout (Max 768px): Show Icons Instead of Text */
+@media (max-width: 768px) {
+    .edit-btn, .delete-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        padding: 0;
+    }
+    
+    /* Hide the text on small screens */
+    .edit-btn span, .delete-btn span {
+        display: none;
+    }
+    
+    /* Show icons on small screens */
+    .edit-btn i, .delete-btn i {
+        display: inline-block;
+        font-size: 20px;
+    }
+    
+    /* Stack edit and delete icons vertically on small screens */
+    .task-container div {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

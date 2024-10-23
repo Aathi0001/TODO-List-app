@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List App</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>
+    .strikethrough {
+      text-decoration: line-through;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">To-Do List App</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item d-md-none">
+                    <a class="nav-link" href="#" id="all-tasks-header">All Tasks</a>
+                </li>
+                <li class="nav-item d-md-none">
+                    <a class="nav-link" href="#" id="ongoing-tasks-header">Ongoing Tasks</a>
+                </li>
+                <li class="nav-item d-md-none">
+                    <a class="nav-link" href="#" id="show-completed-tasks-header">Completed Tasks</a>
+                </li>
+                <li>
+                  <div class="auth-links">
+                    {% if session.user_id %}
+                        <a href="{{ url_for('logout') }}">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}">Login</a>
+                    {% endif %}
+                  </div>
+                  </li>
+            </ul>
+        </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <!-- Sidebar -->
+        <div class="col-md-3 sidebar d-none d-md-block">
+            <div class="menu-header">
+                <h1><span>M</span>enu</h1>
+            </div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="all-tasks-sidebar">All Tasks</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="ongoing-tasks-sidebar">Ongoing Tasks</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="show-completed-tasks-sidebar">Completed Tasks</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 main-content">
+          <div class="input-group mb-3">
+              <input type="text" id="task-input" class="form-control" placeholder="Enter a new task">
+          </div>
+
+          <!-- Initially hidden fields for description and time -->
+          <div id="optional-fields" class="mb-3" style="display: none;">
+              <textarea id="task-desc" class="form-control mb-2" placeholder="Enter a description (optional)"></textarea>
+              <input type="datetime-local" id="task-time" class="form-control mb-2" placeholder="Enter time (optional)">
+              <button id="add-task-btn" class="btn btn-primary">Add Task</button>
+          </div>
+
+          <h5>Tasks</h5>
+          <ul id="task-list" class="list-group"></ul>
+        </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editModalLabel">Edit Task</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" id="edit-task-input" class="form-control" placeholder="Task">
+          <textarea id="edit-task-desc" class="form-control mb-2" placeholder="Enter a description (optional)"></textarea>
+          <input type="datetime-local" id="edit-task-time" class="form-control mb-2" placeholder="Enter time (optional)">
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="save-edit-btn">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function () {
+    let editIndex = -1;
+
+    loadTasks();  // Load all tasks initially
+    checkTaskDeadlines();  // Check for task deadlines immediately on load
+
+    // Request Notification permission
+    if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission().then(function (permission) {
+            if (permission === "granted") {
+                console.log("Notifications permission granted.");
+            }
+        });
+    }
+
+    // Function to notify user of tasks
+    function notifyUser(task) {
+        if (Notification.permission === "granted") {
+            const notificationOptions = {
+                body: `Task: ${task.text}\n${task.description ? 'Description: ' + task.description : ''}\nDue: ${task.time}`,
+                icon: '/path/to/your/icon.png'  // Optional icon
+            };
+            new Notification("Task Reminder", notificationOptions);
+        }
+    }
+
+    // Function to check for upcoming task deadlines
+    function checkTaskDeadlines() {
+        const tasks = getTasks();
+        const currentTime = new Date();
+
+        tasks.forEach(task => {
+            if (task.time) {
+                const taskTime = new Date(task.time);
+                const timeDifference = taskTime - currentTime;
+
+                // If the task is due within the next 5 minutes and not already notified
+                if (timeDifference > 0 && timeDifference <= 5 * 60 * 1000 && !task.notified) {
+                    notifyUser(task);
+                    task.notified = true;  // Mark as notified
+                }
+            }
+        });
+
+        saveTasks(tasks);  // Save tasks with updated notification status
+    }
+
+    // Function to add a task
+    function addTask(taskText, taskDesc, taskTime) {
+        const tasks = getTasks();
+        tasks.push({
+            text: taskText,
+            description: taskDesc || '',  // Optional description
+            time: taskTime || '',         // Optional time
+            completed: false,
+            notified: false,              // Notification flag
+            timestamp: Date.now()         // Add timestamp for tracking completion time
+        });
+        saveTasks(tasks);
+    }
+
+    // Function to remove 'active' class from all menu items and add it to the clicked one
+    function setActiveMenuItem(selector) {
+        $('.nav-link').removeClass('active'); // Remove active class from all menu items
+        $(selector).addClass('active');      // Add active class to the clicked one
+    }
+
+    // Show optional fields when clicking the task input box
+    $('#task-input').focus(function () {
+        $('#optional-fields').slideDown();  // Show description and time fields
+    });
+
+    // Hide optional fields if the user clicks outside the input, description, or time fields
+    $(document).click(function (event) {
+        if (!$(event.target).closest('#task-input, #optional-fields').length) {
+            if (!$('#task-input').val()) {
+                $('#optional-fields').slideUp();  // Hide description and time fields only if task input is empty
+            }
+        }
+    });
+
+    // Add new task
+    $('#add-task-btn').click(function () {
+        const taskText = $('#task-input').val();
+        const taskDesc = $('#task-desc').val();
+        const taskTime = $('#task-time').val();
+
+        if (taskText) {
+            addTask(taskText, taskDesc, taskTime); // Call addTask function
+            loadTasks();  // Reload tasks to show the newly added task
+            $('#task-input').val('');  // Clear the input fields
+            $('#task-desc').val('');
+            $('#task-time').val('');
+            $('#optional-fields').slideUp();  // Hide the optional fields after adding a task
+        }
+    });
+
+    // Toggle completion with checkbox, strike description and time
+    $(document).on('change', '.complete-checkbox', function () {
+        const index = $(this).data('index');
+        const tasks = getTasks();
+        tasks[index].completed = !tasks[index].completed;
+        tasks[index].timestamp = Date.now();  // Update timestamp when marked completed
+        saveTasks(tasks);
+        loadTasks();
+    });
+
+    // Edit task
+$(document).on('click', '.edit-btn', function () {
+    editIndex = $(this).data('index');
+    const tasks = getTasks();
+    $('#edit-task-input').val(tasks[editIndex].text);
+    $('#edit-task-desc').val(tasks[editIndex].description); // Load description into the modal
+    $('#edit-task-time').val(tasks[editIndex].time);         // Load time into the modal
+    $('#editModal').modal('show'); // Show the modal for editing
+});
+
+// Save edited task
+$('#save-edit-btn').click(function () {
+    const tasks = getTasks();
+    const newText = $('#edit-task-input').val();
+    const newDesc = $('#edit-task-desc').val(); // Get new description
+    const newTime = $('#edit-task-time').val(); // Get new time
+
+    if (editIndex >= 0 && newText) {
+        tasks[editIndex].text = newText;
+        tasks[editIndex].description = newDesc || '';  // Update description
+        tasks[editIndex].time = newTime || '';         // Update time
+        saveTasks(tasks);
+        loadTasks();  // Reload tasks to show updated data
+        $('#editModal').modal('hide'); // Hide the modal after saving
+    }
+});
+
+
+    // Delete task
+    $(document).on('click', '.delete-btn', function () {
+        const index = $(this).data('index');
+        const tasks = getTasks();
+        tasks.splice(index, 1);  // Remove task
+        saveTasks(tasks);
+        loadTasks();
+    });
+
+    // Show all tasks from header or sidebar
+    $('#all-tasks-header, #all-tasks-sidebar').click(function () {
+        setActiveMenuItem('#all-tasks-header, #all-tasks-sidebar');
+        loadTasks();
+    });
+
+    // Show ongoing tasks from header or sidebar
+    $('#ongoing-tasks-header, #ongoing-tasks-sidebar').click(function () {
+        setActiveMenuItem('#ongoing-tasks-header, #ongoing-tasks-sidebar');
+        loadOngoingTasks();
+    });
+
+    // Show completed tasks from header or sidebar
+    $('#show-completed-tasks-header, #show-completed-tasks-sidebar').click(function () {
+        setActiveMenuItem('#show-completed-tasks-header, #show-completed-tasks-sidebar');
+        loadCompletedTasks();
+    });
+
+    // Default active item
+    setActiveMenuItem('#all-tasks-header, #all-tasks-sidebar');
+
+    // Task functions
+    function getTasks() {
+        const tasks = localStorage.getItem('tasks');
+        return tasks ? JSON.parse(tasks) : [];
+    }
+
+    function saveTasks(tasks) {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function loadTasks() {
+        $('#task-list').empty();  // Clear current list
+        const tasks = getTasks();
+        
+        // Filter out completed tasks older than 24 hours
+        const currentTime = Date.now();
+        const filteredTasks = tasks.filter(task => {
+            if (task.completed) {
+                const completedTime = task.timestamp; // Timestamp when the task was completed
+                return (currentTime - completedTime) < 24 * 60 * 60 * 1000; // Keep if completed less than 24 hours ago
+            }
+            return true; // Keep ongoing tasks
+        });
+
+        // Save filtered tasks back to local storage
+        saveTasks(filteredTasks);
+
+        filteredTasks.forEach((task, index) => {
+            appendTask(task.text, task.completed, index, task.description, task.time);
+        });
+    }
+
+    function loadOngoingTasks() {
+        $('#task-list').empty();  // Clear current list
+        const tasks = getTasks();
+        tasks.forEach((task, index) => {
+            if (!task.completed) {
+                appendTask(task.text, task.completed, index, task.description, task.time);
+            }
+        });
+    }
+
+    function loadCompletedTasks() {
+        $('#task-list').empty();  // Clear current list
+        const tasks = getTasks();
+        tasks.forEach((task, index) => {
+            if (task.completed) {
+                appendTask(task.text, task.completed, index, task.description, task.time);
+            }
+        });
+    }
+
+    function appendTask(text, completed = false, index, description = '', time = '') {
+        const checkedAttr = completed ? 'checked' : '';
+        const taskStrikethrough = completed ? 'strikethrough' : '';  // Apply strikethrough if completed
+        const taskItem = `
+          <li class="list-group-item task-item ${completed ? 'completed' : ''}">
+              <div class="task-container">
+                  <input type="checkbox" class="complete-checkbox" data-index="${index}" ${checkedAttr}>
+                  <span class="task-text ${taskStrikethrough}">${text}</span>
+                  <span class="task-desc ${taskStrikethrough}">${description ? ` - ${description}` : ''}</span>
+                  <span class="task-time ${taskStrikethrough}">${time ? ` (Due: ${time})` : ''}</span>
+                  <div>
+                      <button class="btn btn-success btn-sm edit-btn" data-index="${index}">
+                          <i class="bi bi-pencil-square"></i><span class="d-none d-md-inline"> Edit</span>
+                      </button>
+                      <button class="btn btn-danger btn-sm delete-btn" data-index="${index}">
+                          <i class="fas fa-trash"></i><span class="d-none d-md-inline"> Delete</span>
+                      </button>
+                  </div>
+              </div>
+          </li>`;
+        $('#task-list').append(taskItem);
+    }
+
+    // Call checkTaskDeadlines every minute
+    setInterval(checkTaskDeadlines, 60 * 1000);  // 60,000 ms = 1 minute
+});
+
+  </script>
+</body>
+</html>
